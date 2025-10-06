@@ -1,0 +1,72 @@
+name: Deploy Cloudflare Release Viewer
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'index.html'
+      - '.github/workflows/deploy.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    # Only allow one deployment at a time
+    concurrency:
+      group: "pages"
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure Worker URL
+        env:
+          WORKER_URL: ${{ secrets.CLOUDFLARE_WORKER_URL }}
+        run: |
+          echo "=== Configuring Cloudflare Worker URL ==="
+          
+          if [ -z "$WORKER_URL" ]; then
+            echo "⚠️  CLOUDFLARE_WORKER_URL secret not set!"
+            echo "Using placeholder URL - you'll need to update it manually"
+            WORKER_URL="https://your-worker.your-subdomain.workers.dev"
+          else
+            echo "✅ Using Cloudflare Worker URL from secrets"
+            echo "Worker URL: ${WORKER_URL:0:30}..."
+          fi
+          
+          # Create output directory
+          mkdir -p viewer-output
+          
+          # Copy HTML file and replace worker URL
+          sed "s|const WORKER_URL = 'https://your-worker.your-subdomain.workers.dev';|const WORKER_URL = '$WORKER_URL';|g" \
+            index.html > viewer-output/index.html
+          
+          echo "✅ Viewer configured successfully"
+          echo "Output file: viewer-output/index.html"
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './viewer-output'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Deployment Summary
+        run: |
+          echo "## 🎉 Deployment Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Viewer URL:** https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Open the URL and enter your Cloudflare Worker password to access releases." >> $GITHUB_STEP_SUMMARY
