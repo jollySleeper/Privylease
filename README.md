@@ -102,10 +102,11 @@ Share your private GitHub releases with friends, team members, or testers withou
    - Click "Add secret"
 
 3. **Enable GitHub Pages**
-   - Go to Settings → Pages
+   - Go to your repository Settings → Pages
    - Under "Build and deployment":
-     - Source: **GitHub Actions**
+     - Source: Select **GitHub Actions** (not "Deploy from a branch")
    - Click "Save"
+   - **Important:** This must be set to "GitHub Actions" for the automated deployment to work
 
 4. **Deploy**
    - The GitHub Actions workflow ([`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)) will automatically:
