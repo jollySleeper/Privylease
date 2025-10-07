@@ -49,58 +49,83 @@ export default {
     const url = new URL(request.url);
     const password = request.headers.get('X-Password');
 
-    // Rate limiting: Check if IP is blocked
-    const clientIP = request.headers.get('CF-Connecting-IP') ||
-                     request.headers.get('X-Forwarded-For') ||
-                     request.headers.get('X-Real-IP') ||
-                     'unknown';
+    // Rate limiting: Check if IP is blocked (optional, requires KV binding)
+    let rateLimitData = null;
+    let rateLimitingEnabled = false;
 
-    const rateLimitKey = `ratelimit:${clientIP}`;
-    const rateLimitData = await env.KV.get(rateLimitKey);
+    if (env.KV) {
+      rateLimitingEnabled = true;
+      const clientIP = request.headers.get('CF-Connecting-IP') ||
+                       request.headers.get('X-Forwarded-For') ||
+                       request.headers.get('X-Real-IP') ||
+                       'unknown';
 
-    if (rateLimitData) {
-      const { attempts, resetAt } = JSON.parse(rateLimitData);
-      const now = Date.now();
+      const rateLimitKey = `ratelimit:${clientIP}`;
+      try {
+        rateLimitData = await env.KV.get(rateLimitKey);
 
-      if (now < resetAt) {
-        // Still blocked
-        const retryAfter = Math.ceil((resetAt - now) / 1000);
-        return new Response(JSON.stringify({
-          error: 'Too many failed attempts. Try again later.',
-          retryAfter: retryAfter
-        }), {
-          status: 429,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Retry-After': retryAfter.toString()
+        if (rateLimitData) {
+          const { attempts, resetAt } = JSON.parse(rateLimitData);
+          const now = Date.now();
+
+          if (now < resetAt) {
+            // Still blocked
+            const retryAfter = Math.ceil((resetAt - now) / 1000);
+            return new Response(JSON.stringify({
+              error: 'Too many failed attempts. Try again later.',
+              retryAfter: retryAfter
+            }), {
+              status: 429,
+              headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Retry-After': retryAfter.toString()
+              }
+            });
           }
-        });
+        }
+      } catch (error) {
+        // Log KV error but continue without rate limiting
+        console.warn('Rate limiting unavailable due to KV error:', error.message);
+        rateLimitingEnabled = false;
       }
+    } else {
+      console.warn('Rate limiting disabled: KV namespace not configured. Consider setting up KV for enhanced security.');
     }
 
     // Verify password with constant-time comparison
     const isValidPassword = await timingSafeEquals(password || '', env.VIEWER_PASSWORD);
 
     if (!isValidPassword) {
-      // Increment failed attempts
-      const currentData = rateLimitData ? JSON.parse(rateLimitData) : { attempts: 0, resetAt: 0 };
-      const newAttempts = currentData.attempts + 1;
-      const now = Date.now();
+      // Increment failed attempts (if rate limiting is enabled)
+      if (rateLimitingEnabled) {
+        try {
+          const currentData = rateLimitData ? JSON.parse(rateLimitData) : { attempts: 0, resetAt: 0 };
+          const newAttempts = currentData.attempts + 1;
+          const now = Date.now();
+          const clientIP = request.headers.get('CF-Connecting-IP') ||
+                           request.headers.get('X-Forwarded-For') ||
+                           request.headers.get('X-Real-IP') ||
+                           'unknown';
+          const rateLimitKey = `ratelimit:${clientIP}`;
 
-      if (newAttempts >= 5) {
-        // Block for 15 minutes
-        const resetAt = now + (15 * 60 * 1000);
-        await env.KV.put(rateLimitKey, JSON.stringify({
-          attempts: newAttempts,
-          resetAt: resetAt
-        }), { expirationTtl: 900 }); // 15 minutes
-      } else {
-        // Just increment attempts, reset after 15 minutes
-        await env.KV.put(rateLimitKey, JSON.stringify({
-          attempts: newAttempts,
-          resetAt: now + (15 * 60 * 1000)
-        }), { expirationTtl: 900 });
+          if (newAttempts >= 5) {
+            // Block for 15 minutes
+            const resetAt = now + (15 * 60 * 1000);
+            await env.KV.put(rateLimitKey, JSON.stringify({
+              attempts: newAttempts,
+              resetAt: resetAt
+            }), { expirationTtl: 900 }); // 15 minutes
+          } else {
+            // Just increment attempts, reset after 15 minutes
+            await env.KV.put(rateLimitKey, JSON.stringify({
+              attempts: newAttempts,
+              resetAt: now + (15 * 60 * 1000)
+            }), { expirationTtl: 900 });
+          }
+        } catch (error) {
+          console.warn('Failed to update rate limit data:', error.message);
+        }
       }
 
       return new Response(JSON.stringify({ error: 'Invalid password' }), {
@@ -112,8 +137,19 @@ export default {
       });
     }
 
-    // Password is valid, reset rate limit counter
-    await env.KV.delete(rateLimitKey);
+    // Password is valid, reset rate limit counter (if enabled)
+    if (rateLimitingEnabled) {
+      try {
+        const clientIP = request.headers.get('CF-Connecting-IP') ||
+                         request.headers.get('X-Forwarded-For') ||
+                         request.headers.get('X-Real-IP') ||
+                         'unknown';
+        const rateLimitKey = `ratelimit:${clientIP}`;
+        await env.KV.delete(rateLimitKey);
+      } catch (error) {
+        console.warn('Failed to reset rate limit counter:', error.message);
+      }
+    }
 
     // Route: GET /releases - List all releases
     if (url.pathname === '/releases') {

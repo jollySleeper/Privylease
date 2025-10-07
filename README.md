@@ -32,7 +32,7 @@ Share your private GitHub releases with friends, team members, or testers withou
 
 🔒 **Password Protected** - Share with anyone using a simple password
 🔐 **Secure Token Storage** - GitHub token stays server-side (encrypted), never exposed to browsers
-🛡️ **Rate Limiting** - Built-in brute force protection with automatic blocking
+🛡️ **Rate Limiting** - Optional brute force protection with automatic blocking (requires KV setup)
 ⚡ **Direct CDN Downloads** - Files download directly from GitHub's CDN (no proxy overhead)
 💰 **Zero Bandwidth Cost** - Worker only handles authentication, not file transfers
 🚫 **No CORS Issues** - Worker handles all GitHub API authentication
@@ -83,7 +83,7 @@ Share your private GitHub releases with friends, team members, or testers withou
 
    - Click "Save and Deploy" after adding all variables
 
-5. **Set Up KV Namespace (Required for Rate Limiting)**
+5. **Set Up KV Namespace (Optional - Recommended for Enhanced Security)**
    - Go to your Cloudflare Dashboard → "Workers & Pages" → "KV"
    - Click "Create namespace"
    - Name it `rate-limit` (or any name you prefer)
@@ -93,7 +93,7 @@ Share your private GitHub releases with friends, team members, or testers withou
    - KV namespace: Select the `rate-limit` namespace you just created
    - Click "Save and Deploy"
 
-   **Note:** The KV namespace is required for the rate limiting security feature that prevents brute force attacks on the password.
+   **Note:** The KV namespace enables rate limiting (5 attempts = 15-minute block) to prevent brute force attacks. If not configured, the worker will still function normally but with reduced security - a warning will be logged in the worker console.
 
 6. **Copy Worker URL**
    - Your worker URL will look like: `https://github-proxy.your-subdomain.workers.dev`
@@ -295,7 +295,7 @@ Gets an authenticated download URL for a specific asset.
 
 **Security Features:**
 - Password validation on every request with constant-time comparison
-- Built-in rate limiting (5 attempts = 15-minute block) using Cloudflare KV
+- Optional rate limiting (5 attempts = 15-minute block) using Cloudflare KV
 - GitHub token stored as encrypted Cloudflare secret
 - HTTPS-only communication
 - No token exposure to browser/client
