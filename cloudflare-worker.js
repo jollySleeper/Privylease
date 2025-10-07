@@ -18,6 +18,20 @@
  * 5. Deploy!
  */
 
+// Constant-time string comparison to prevent timing attacks
+async function timingSafeEquals(a, b) {
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+
+  return result === 0;
+}
+
 export default {
   async fetch(request, env) {
     // Handle CORS preflight
@@ -35,8 +49,60 @@ export default {
     const url = new URL(request.url);
     const password = request.headers.get('X-Password');
 
-    // Verify password
-    if (password !== env.VIEWER_PASSWORD) {
+    // Rate limiting: Check if IP is blocked
+    const clientIP = request.headers.get('CF-Connecting-IP') ||
+                     request.headers.get('X-Forwarded-For') ||
+                     request.headers.get('X-Real-IP') ||
+                     'unknown';
+
+    const rateLimitKey = `ratelimit:${clientIP}`;
+    const rateLimitData = await env.KV.get(rateLimitKey);
+
+    if (rateLimitData) {
+      const { attempts, resetAt } = JSON.parse(rateLimitData);
+      const now = Date.now();
+
+      if (now < resetAt) {
+        // Still blocked
+        const retryAfter = Math.ceil((resetAt - now) / 1000);
+        return new Response(JSON.stringify({
+          error: 'Too many failed attempts. Try again later.',
+          retryAfter: retryAfter
+        }), {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Retry-After': retryAfter.toString()
+          }
+        });
+      }
+    }
+
+    // Verify password with constant-time comparison
+    const isValidPassword = await timingSafeEquals(password || '', env.VIEWER_PASSWORD);
+
+    if (!isValidPassword) {
+      // Increment failed attempts
+      const currentData = rateLimitData ? JSON.parse(rateLimitData) : { attempts: 0, resetAt: 0 };
+      const newAttempts = currentData.attempts + 1;
+      const now = Date.now();
+
+      if (newAttempts >= 5) {
+        // Block for 15 minutes
+        const resetAt = now + (15 * 60 * 1000);
+        await env.KV.put(rateLimitKey, JSON.stringify({
+          attempts: newAttempts,
+          resetAt: resetAt
+        }), { expirationTtl: 900 }); // 15 minutes
+      } else {
+        // Just increment attempts, reset after 15 minutes
+        await env.KV.put(rateLimitKey, JSON.stringify({
+          attempts: newAttempts,
+          resetAt: now + (15 * 60 * 1000)
+        }), { expirationTtl: 900 });
+      }
+
       return new Response(JSON.stringify({ error: 'Invalid password' }), {
         status: 401,
         headers: {
@@ -45,6 +111,9 @@ export default {
         }
       });
     }
+
+    // Password is valid, reset rate limit counter
+    await env.KV.delete(rateLimitKey);
 
     // Route: GET /releases - List all releases
     if (url.pathname === '/releases') {

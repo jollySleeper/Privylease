@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self'; connect-src https://*.workers.dev;">
     <title>GitHub Releases Viewer</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🔐</text></svg>">
     <style>
@@ -306,14 +307,20 @@
         const WORKER_URL = 'https://your-worker.your-subdomain.workers.dev';
 
         let password = sessionStorage.getItem('password');
+        let sessionTimeoutId = null;
+        let warningTimeoutId = null;
+        const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+        const WARNING_TIME_MS = 5 * 60 * 1000; // 5 minutes before timeout
 
         // Initialize
         window.addEventListener('DOMContentLoaded', () => {
             if (password) {
                 document.getElementById('loginBox').style.display = 'none';
                 document.getElementById('logoutSection').classList.add('active');
+                startSessionTimeout();
                 loadReleases();
             }
+            setupActivityTracking();
         });
 
         function handleEnter(event) {
@@ -351,6 +358,9 @@
                 document.getElementById('logoutSection').classList.add('active');
                 document.getElementById('passwordInput').value = '';
 
+                // Start session timeout
+                startSessionTimeout();
+
                 loadReleases();
             } catch (err) {
                 showError('Invalid password. Please try again.');
@@ -359,7 +369,15 @@
 
         function logout() {
             sessionStorage.removeItem('password');
+            sessionStorage.removeItem('lastActivity');
             password = null;
+
+            // Clear session timeouts
+            clearTimeout(sessionTimeoutId);
+            clearTimeout(warningTimeoutId);
+            sessionTimeoutId = null;
+            warningTimeoutId = null;
+
             document.getElementById('loginBox').style.display = 'block';
             document.getElementById('logoutSection').classList.remove('active');
             document.getElementById('releases').innerHTML = '';
@@ -422,33 +440,62 @@
                     day: 'numeric'
                 });
 
-                releaseDiv.innerHTML = `
-                    <div class="release-header">
-                        <div class="release-title">${release.name || release.tag_name}</div>
-                        <div class="release-date">📅 ${date}</div>
-                        <span class="release-tag">${release.tag_name}</span>
-                    </div>
-                    <div class="asset-list" id="release-${release.id}"></div>
-                `;
+                // Create release header safely
+                const releaseHeader = document.createElement('div');
+                releaseHeader.className = 'release-header';
 
+                const releaseTitle = document.createElement('div');
+                releaseTitle.className = 'release-title';
+                releaseTitle.textContent = release.name || release.tag_name;
+
+                const releaseDate = document.createElement('div');
+                releaseDate.className = 'release-date';
+                releaseDate.textContent = `📅 ${date}`;
+
+                const releaseTag = document.createElement('span');
+                releaseTag.className = 'release-tag';
+                releaseTag.textContent = release.tag_name;
+
+                releaseHeader.appendChild(releaseTitle);
+                releaseHeader.appendChild(releaseDate);
+                releaseHeader.appendChild(releaseTag);
+
+                const assetList = document.createElement('div');
+                assetList.className = 'asset-list';
+                assetList.id = `release-${release.id}`;
+
+                releaseDiv.appendChild(releaseHeader);
+                releaseDiv.appendChild(assetList);
                 container.appendChild(releaseDiv);
 
-                const assetList = document.getElementById(`release-${release.id}`);
+                // Create asset items safely
                 assets.forEach(asset => {
                     const size = formatBytes(asset.size);
                     const icon = getFileIcon(asset.name);
-                    
+
                     const assetItem = document.createElement('div');
                     assetItem.className = 'asset-item';
-                    assetItem.innerHTML = `
-                        <div class="asset-info">
-                            <div class="asset-name">${icon} ${asset.name}</div>
-                            <div class="asset-size">${size}</div>
-                        </div>
-                        <button class="download-btn" onclick="downloadAsset(event, '${asset.id}', '${asset.name}')">
-                            ⬇️ Download
-                        </button>
-                    `;
+
+                    const assetInfo = document.createElement('div');
+                    assetInfo.className = 'asset-info';
+
+                    const assetName = document.createElement('div');
+                    assetName.className = 'asset-name';
+                    assetName.textContent = `${icon} ${asset.name}`;
+
+                    const assetSize = document.createElement('div');
+                    assetSize.className = 'asset-size';
+                    assetSize.textContent = size;
+
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.className = 'download-btn';
+                    downloadBtn.textContent = '⬇️ Download';
+                    downloadBtn.onclick = (event) => downloadAsset(event, asset.id, asset.name);
+
+                    assetInfo.appendChild(assetName);
+                    assetInfo.appendChild(assetSize);
+                    assetItem.appendChild(assetInfo);
+                    assetItem.appendChild(downloadBtn);
                     assetList.appendChild(assetItem);
                 });
             });
@@ -528,6 +575,51 @@
             setTimeout(() => {
                 error.innerHTML = '';
             }, 5000);
+        }
+
+        function setupActivityTracking() {
+            // Reset session timeout on user activity
+            const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+            events.forEach(event => {
+                document.addEventListener(event, resetSessionTimeout, { passive: true });
+            });
+        }
+
+        function startSessionTimeout() {
+            // Clear any existing timeouts
+            clearTimeout(sessionTimeoutId);
+            clearTimeout(warningTimeoutId);
+
+            // Set warning timeout (5 minutes before actual timeout)
+            warningTimeoutId = setTimeout(() => {
+                showSessionWarning();
+            }, SESSION_TIMEOUT_MS - WARNING_TIME_MS);
+
+            // Set actual timeout
+            sessionTimeoutId = setTimeout(() => {
+                logout();
+                showError('Session expired due to inactivity. Please log in again.');
+            }, SESSION_TIMEOUT_MS);
+
+            // Store last activity time
+            sessionStorage.setItem('lastActivity', Date.now().toString());
+        }
+
+        function resetSessionTimeout() {
+            if (password) { // Only reset if logged in
+                startSessionTimeout();
+            }
+        }
+
+        function showSessionWarning() {
+            const error = document.getElementById('error');
+            error.innerHTML = `<div class="error" style="background: #f39c12; color: white;">⚠️ Your session will expire in 5 minutes due to inactivity. Move your mouse or press a key to extend your session.</div>`;
+            // Auto-hide warning after 10 seconds
+            setTimeout(() => {
+                if (error.innerHTML.includes('session will expire')) {
+                    error.innerHTML = '';
+                }
+            }, 10000);
         }
     </script>
 </body>
