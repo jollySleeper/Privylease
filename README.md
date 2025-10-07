@@ -30,15 +30,16 @@ Share your private GitHub releases with friends, team members, or testers withou
 
 ## ✨ Features
 
-🔒 **Password Protected** - Share with anyone using a simple password  
-🔐 **Secure Token Storage** - GitHub token stays server-side (encrypted), never exposed to browsers  
-⚡ **Direct CDN Downloads** - Files download directly from GitHub's CDN (no proxy overhead)  
-💰 **Zero Bandwidth Cost** - Worker only handles authentication, not file transfers  
-🚫 **No CORS Issues** - Worker handles all GitHub API authentication  
-🆓 **Free Tier Friendly** - 100,000 requests/day on Cloudflare's free plan  
-📱 **Beautiful UI** - Modern, responsive interface that works on all devices  
-🌐 **Works Everywhere** - No browser restrictions or special requirements  
-🔒 **HTTPS Only** - All traffic encrypted with Cloudflare SSL  
+🔒 **Password Protected** - Share with anyone using a simple password
+🔐 **Secure Token Storage** - GitHub token stays server-side (encrypted), never exposed to browsers
+🛡️ **Rate Limiting** - Built-in brute force protection with automatic blocking
+⚡ **Direct CDN Downloads** - Files download directly from GitHub's CDN (no proxy overhead)
+💰 **Zero Bandwidth Cost** - Worker only handles authentication, not file transfers
+🚫 **No CORS Issues** - Worker handles all GitHub API authentication
+🆓 **Free Tier Friendly** - 100,000 requests/day on Cloudflare's free plan
+📱 **Beautiful UI** - Modern, responsive interface that works on all devices
+🌐 **Works Everywhere** - No browser restrictions or special requirements
+🔒 **HTTPS Only** - All traffic encrypted with Cloudflare SSL
 ⚙️ **Easy Setup** - Deploy in 10 minutes with automated GitHub Actions workflow  
 
 ---
@@ -82,7 +83,19 @@ Share your private GitHub releases with friends, team members, or testers withou
 
    - Click "Save and Deploy" after adding all variables
 
-5. **Copy Worker URL**
+5. **Set Up KV Namespace (Required for Rate Limiting)**
+   - Go to your Cloudflare Dashboard → "Workers & Pages" → "KV"
+   - Click "Create namespace"
+   - Name it `rate-limit` (or any name you prefer)
+   - Go back to your Worker → "Settings" → "Variables" → "KV Namespace Bindings"
+   - Click "Add binding"
+   - Variable name: `KV`
+   - KV namespace: Select the `rate-limit` namespace you just created
+   - Click "Save and Deploy"
+
+   **Note:** The KV namespace is required for the rate limiting security feature that prevents brute force attacks on the password.
+
+6. **Copy Worker URL**
    - Your worker URL will look like: `https://github-proxy.your-subdomain.workers.dev`
    - Save this URL - you'll need it in the next step
 
@@ -281,10 +294,10 @@ Gets an authenticated download URL for a specific asset.
 3. **GitHub Actions** (`.github/workflows/deploy.yml`) - Automates deployment to GitHub Pages
 
 **Security Features:**
-- Password validation on every request
+- Password validation on every request with constant-time comparison
+- Built-in rate limiting (5 attempts = 15-minute block) using Cloudflare KV
 - GitHub token stored as encrypted Cloudflare secret
 - HTTPS-only communication
-- Rate limiting provided by Cloudflare
 - No token exposure to browser/client
 - Download URLs are time-limited by GitHub
 
