@@ -23,13 +23,11 @@
     --border-radius-lg: 12px;
     --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     --transition: 0.3s;
-    --btn-padding: 12px 24px;
-    --btn-font-size: 16px;
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
-        /* Dark theme colors (same gradient as light theme) */
+        /* Dark theme colors */
         --bg-card: #2a2a3e;
         --bg-secondary: #1e1e2f;
         --bg-hover: #2d2d42;
@@ -108,6 +106,13 @@ body {
     margin-bottom: 15px;
     background: var(--bg-card);
     color: var(--text-primary);
+    transition: border-color var(--transition);
+}
+
+.login-box input:focus {
+    outline: none;
+    border-color: var(--btn-primary);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .login-box button {
@@ -257,8 +262,6 @@ body {
     border-radius: var(--border-radius);
     font-weight: 600;
     cursor: pointer;
-    text-decoration: none;
-    display: inline-block;
     transition: background var(--transition);
     white-space: nowrap;
 }
@@ -328,34 +331,8 @@ body {
 }
 
 @keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
-@media (max-width: 600px) {
-    .asset-item {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .button-container {
-        width: 100%;
-        margin-top: 10px;
-        flex-direction: row;
-        gap: 8px;
-    }
-
-    .download-btn,
-    .copy-btn {
-        flex: 1;
-        margin-left: 0;
-        text-align: center;
-    }
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 /* Accessibility helpers */
@@ -369,72 +346,6 @@ body {
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
-}
-
-/* Button styles */
-.btn-primary {
-    background: var(--btn-primary);
-    color: white;
-    border: none;
-    padding: var(--btn-padding);
-    border-radius: var(--border-radius);
-    font-size: var(--btn-font-size);
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color var(--transition);
-    display: inline-block;
-    text-align: center;
-    text-decoration: none;
-}
-
-.btn-primary:hover {
-    background: var(--btn-primary-hover);
-}
-
-.btn-secondary {
-    background: var(--btn-danger);
-    color: white;
-    border: none;
-    padding: var(--btn-padding);
-    border-radius: var(--border-radius);
-    font-size: var(--btn-font-size);
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color var(--transition);
-    display: inline-block;
-    text-align: center;
-    text-decoration: none;
-}
-
-.btn-secondary:hover {
-    background: var(--btn-danger-hover);
-}
-
-/* Form improvements */
-.form-group {
-    margin-bottom: 20px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.form-group input {
-    width: 100%;
-    padding: 12px;
-    border: 2px solid var(--border-light);
-    border-radius: var(--border-radius);
-    font-size: 16px;
-    transition: border-color var(--transition);
-}
-
-.form-group input:focus {
-    outline: none;
-    border-color: var(--btn-primary);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 /* NoScript message */
@@ -462,4 +373,25 @@ body {
     margin-bottom: 0;
     font-size: 14px;
     opacity: 0.8;
+}
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+    .asset-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .button-container {
+        width: 100%;
+        margin-top: 10px;
+        flex-direction: row;
+        gap: 8px;
+    }
+
+    .download-btn,
+    .copy-btn {
+        flex: 1;
+        text-align: center;
+    }
 }
