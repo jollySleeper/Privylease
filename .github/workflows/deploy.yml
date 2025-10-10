@@ -5,11 +5,12 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'index.html'
-      - 'styles/'
-      - 'scripts/'
-      - '.github/workflows/deploy.yml'
+    paths-ignore:
+      - 'README.md'
+      - 'LICENSE'
+      - '.gitignore'
+      - '*.md'
+      - 'cloudflare-worker.js'
 
 jobs:
   deploy:
