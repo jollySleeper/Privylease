@@ -137,6 +137,9 @@ async function handleApiError(response, context = 'api') {
 
 // Initialize
 window.addEventListener('DOMContentLoaded', () => {
+    // Security: Clean URL to prevent password leakage in query params
+    cleanUrlParams();
+
     if (appState.password) {
         elements.loginBox.style.display = 'none';
         elements.logoutSection.classList.add('active');
@@ -149,15 +152,44 @@ window.addEventListener('DOMContentLoaded', () => {
     setupActivityTracking();
 });
 
+/**
+ * Security: Clean URL parameters to prevent password leakage
+ * Removes any sensitive data from URL query params and hash
+ */
+function cleanUrlParams() {
+    try {
+        const url = new URL(window.location.href);
+        const params = new URLSearchParams(url.search);
+        
+        // Check if there are any query params (especially password)
+        if (params.has('password') || params.toString().length > 0) {
+            // Clean the URL by removing all query params and hash
+            const cleanUrl = `${url.protocol}//${url.host}${url.pathname}`;
+            window.history.replaceState({}, document.title, cleanUrl);
+        }
+    } catch (error) {
+        console.warn('Failed to clean URL params:', error);
+    }
+}
+
 function setupEventListeners() {
     // Password input enter key handler
     elements.passwordInput.addEventListener('keypress', handleEnter);
 
-    // Login button click handler
-    elements.loginButton.addEventListener('click', login);
+    // Login button click handler (prevent form submission)
+    elements.loginButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        login();
+    });
 
     // Logout button click handler
     elements.logoutButton.addEventListener('click', logout);
+
+    // Prevent form submission that could add params to URL
+    elements.loginBox.addEventListener('submit', (e) => {
+        e.preventDefault();
+        login();
+    });
 
     // Initially hide loading spinner
     elements.loading.style.display = 'none';
@@ -425,7 +457,7 @@ async function getDownloadUrl(assetId, fileName) {
     // Fetch from API
     const response = await fetch(`${WORKER_URL}/download-url/${assetId}`, {
         headers: {
-            'X-Password': password
+            'X-Password': appState.password
         }
     });
 

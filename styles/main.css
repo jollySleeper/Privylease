@@ -70,17 +70,19 @@ body {
 
 .header {
     text-align: center;
-    color: var(--text-primary);
+    color: #ffffff;
     margin-bottom: 30px;
 }
 
 .header h1 {
     font-size: 2em;
     margin-bottom: 10px;
+    color: #ffffff;
 }
 
 .header p {
     opacity: 0.9;
+    color: #ffffff;
 }
 
 .login-box {
