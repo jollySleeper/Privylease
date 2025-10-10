@@ -410,7 +410,13 @@
                 loading.style.display = 'none';
 
                 if (data.length === 0) {
-                    releases.innerHTML = '<div class="no-releases">No releases found</div>';
+                    // Clear previous content
+                    releases.innerHTML = '';
+                    // Create no releases message safely
+                    const noReleasesDiv = document.createElement('div');
+                    noReleasesDiv.className = 'no-releases';
+                    noReleasesDiv.textContent = 'No releases found';
+                    releases.appendChild(noReleasesDiv);
                     releases.classList.add('active');
                     return;
                 }
@@ -525,12 +531,12 @@
         async function downloadAsset(event, assetId, fileName) {
             event.preventDefault();
             const button = event.target;
-            const originalText = button.innerHTML;
-            
+            const originalText = button.textContent;
+
             try {
                 button.disabled = true;
-                button.innerHTML = '📥 Getting download link...';
-                
+                button.textContent = '📥 Getting download link...';
+
                 // Get download URL from Cloudflare Worker
                 const response = await fetch(`${WORKER_URL}/download-url/${assetId}`, {
                     headers: {
@@ -543,19 +549,19 @@
                 }
 
                 const data = await response.json();
-                
+
                 // Open download URL in new tab (direct download from GitHub CDN)
                 window.open(data.downloadUrl, '_blank');
-                
+
                 // Success feedback
-                button.innerHTML = '✅ Opening download...';
+                button.textContent = '✅ Opening download...';
                 setTimeout(() => {
-                    button.innerHTML = originalText;
+                    button.textContent = originalText;
                     button.disabled = false;
                 }, 2000);
-                
+
             } catch (err) {
-                button.innerHTML = originalText;
+                button.textContent = originalText;
                 button.disabled = false;
                 showError(`Failed to download ${fileName}: ${err.message}`);
             }
@@ -571,7 +577,13 @@
 
         function showError(message) {
             const error = document.getElementById('error');
-            error.innerHTML = `<div class="error">❌ ${message}</div>`;
+            // Clear previous content
+            error.innerHTML = '';
+            // Create error div safely
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = `❌ ${message}`;
+            error.appendChild(errorDiv);
             setTimeout(() => {
                 error.innerHTML = '';
             }, 5000);
@@ -613,10 +625,18 @@
 
         function showSessionWarning() {
             const error = document.getElementById('error');
-            error.innerHTML = `<div class="error" style="background: #f39c12; color: white;">⚠️ Your session will expire in 5 minutes due to inactivity. Move your mouse or press a key to extend your session.</div>`;
+            // Clear previous content
+            error.innerHTML = '';
+            // Create warning div safely
+            const warningDiv = document.createElement('div');
+            warningDiv.className = 'error';
+            warningDiv.style.background = '#f39c12';
+            warningDiv.style.color = 'white';
+            warningDiv.textContent = '⚠️ Your session will expire in 5 minutes due to inactivity. Move your mouse or press a key to extend your session.';
+            error.appendChild(warningDiv);
             // Auto-hide warning after 10 seconds
             setTimeout(() => {
-                if (error.innerHTML.includes('session will expire')) {
+                if (error.contains(warningDiv)) {
                     error.innerHTML = '';
                 }
             }, 10000);
