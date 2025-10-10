@@ -4,20 +4,53 @@
       <stop offset="0%" style="stop-color:#667eea"/>
       <stop offset="100%" style="stop-color:#764ba2"/>
     </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.3"/>
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"/>
+    </linearGradient>
   </defs>
 
   <!-- Background circle -->
-  <circle cx="256" cy="256" r="240" fill="url(#bg)" stroke="#ffffff" stroke-width="16"/>
+  <circle cx="256" cy="256" r="240" fill="url(#bg)"/>
 
-  <!-- Lock body -->
-  <rect x="176" y="280" width="160" height="120" rx="20" ry="20" fill="#ffffff"/>
-  <rect x="200" y="320" width="112" height="80" rx="8" ry="8" fill="#333333"/>
+  <!-- Lock shackle (outer arc) -->
+  <path d="M 180 260 
+           C 180 180, 180 140, 256 140
+           C 332 140, 332 180, 332 260
+           L 332 290
+           L 300 290
+           L 300 260
+           C 300 200, 300 175, 256 175
+           C 212 175, 212 200, 212 260
+           L 212 290
+           L 180 290 Z" 
+        fill="#ffffff" stroke="#e0e0e0" stroke-width="2"/>
 
-  <!-- Lock shackle -->
-  <rect x="232" y="200" width="48" height="120" rx="24" ry="24" fill="#ffffff"/>
-  <circle cx="256" cy="200" r="24" fill="#ffffff"/>
+  <!-- Lock body main -->
+  <rect x="150" y="270" width="212" height="160" rx="20" ry="20" 
+        fill="#ffffff" stroke="#e0e0e0" stroke-width="2"/>
+  
+  <!-- Lock body shadow/depth -->
+  <rect x="150" y="270" width="212" height="20" rx="20" ry="20" 
+        fill="url(#shine)" opacity="0.5"/>
 
-  <!-- Keyhole -->
-  <circle cx="256" cy="360" r="8" fill="#ffffff"/>
-  <rect x="248" y="352" width="16" height="20" fill="#ffffff"/>
+  <!-- Lock face plate -->
+  <rect x="180" y="310" width="152" height="100" rx="12" ry="12" 
+        fill="#f5f5f5" stroke="#d0d0d0" stroke-width="1"/>
+
+  <!-- Keyhole circle -->
+  <circle cx="256" cy="345" r="18" fill="#667eea"/>
+  
+  <!-- Keyhole slot -->
+  <path d="M 248 358 L 248 385 C 248 390, 252 395, 256 395 C 260 395, 264 390, 264 385 L 264 358 Z" 
+        fill="#667eea"/>
+
+  <!-- Lock shine effect -->
+  <ellipse cx="200" cy="320" rx="30" ry="15" fill="#ffffff" opacity="0.3"/>
+
+  <!-- Screws for detail -->
+  <circle cx="190" cy="320" r="4" fill="#b0b0b0"/>
+  <circle cx="322" cy="320" r="4" fill="#b0b0b0"/>
+  <circle cx="190" cy="400" r="4" fill="#b0b0b0"/>
+  <circle cx="322" cy="400" r="4" fill="#b0b0b0"/>
 </svg>
