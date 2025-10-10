@@ -13,44 +13,49 @@
   <!-- Background circle -->
   <circle cx="256" cy="256" r="240" fill="url(#bg)"/>
 
-  <!-- Lock shackle (outer arc) -->
-  <path d="M 180 260 
-           C 180 180, 180 140, 256 140
-           C 332 140, 332 180, 332 260
-           L 332 290
-           L 300 290
-           L 300 260
-           C 300 200, 300 175, 256 175
-           C 212 175, 212 200, 212 260
-           L 212 290
-           L 180 290 Z" 
+  <!-- Lock shackle (perfectly centered) -->
+  <path d="M 176 256 
+           C 176 176, 176 130, 256 130
+           C 336 130, 336 176, 336 256
+           L 336 286
+           L 304 286
+           L 304 256
+           C 304 196, 304 165, 256 165
+           C 208 165, 208 196, 208 256
+           L 208 286
+           L 176 286 Z" 
         fill="#ffffff" stroke="#e0e0e0" stroke-width="2"/>
 
-  <!-- Lock body main -->
-  <rect x="150" y="270" width="212" height="160" rx="20" ry="20" 
+  <!-- Lock body main (centered) -->
+  <rect x="146" y="266" width="220" height="170" rx="22" ry="22" 
         fill="#ffffff" stroke="#e0e0e0" stroke-width="2"/>
   
   <!-- Lock body shadow/depth -->
-  <rect x="150" y="270" width="212" height="20" rx="20" ry="20" 
+  <rect x="146" y="266" width="220" height="22" rx="22" ry="22" 
         fill="url(#shine)" opacity="0.5"/>
 
   <!-- Lock face plate -->
-  <rect x="180" y="310" width="152" height="100" rx="12" ry="12" 
+  <rect x="176" y="306" width="160" height="110" rx="12" ry="12" 
         fill="#f5f5f5" stroke="#d0d0d0" stroke-width="1"/>
 
-  <!-- Keyhole circle -->
-  <circle cx="256" cy="345" r="18" fill="#667eea"/>
-  
-  <!-- Keyhole slot -->
-  <path d="M 248 358 L 248 385 C 248 390, 252 395, 256 395 C 260 395, 264 390, 264 385 L 264 358 Z" 
-        fill="#667eea"/>
+  <!-- Keyhole shaped as download arrow (genius idea!) -->
+  <g>
+    <!-- Arrow shaft (rectangular part going down) -->
+    <rect x="244" y="335" width="24" height="45" rx="3" fill="#667eea"/>
+    
+    <!-- Arrow head (triangle pointing down) -->
+    <path d="M 230 375 L 256 400 L 282 375 Z" fill="#667eea"/>
+    
+    <!-- Top circle of keyhole -->
+    <circle cx="256" cy="337" r="16" fill="#667eea"/>
+  </g>
 
   <!-- Lock shine effect -->
-  <ellipse cx="200" cy="320" rx="30" ry="15" fill="#ffffff" opacity="0.3"/>
+  <ellipse cx="200" cy="315" rx="35" ry="18" fill="#ffffff" opacity="0.3"/>
 
-  <!-- Screws for detail -->
-  <circle cx="190" cy="320" r="4" fill="#b0b0b0"/>
-  <circle cx="322" cy="320" r="4" fill="#b0b0b0"/>
-  <circle cx="190" cy="400" r="4" fill="#b0b0b0"/>
-  <circle cx="322" cy="400" r="4" fill="#b0b0b0"/>
+  <!-- Screws for detail (perfectly placed) -->
+  <circle cx="186" cy="316" r="4" fill="#b0b0b0"/>
+  <circle cx="326" cy="316" r="4" fill="#b0b0b0"/>
+  <circle cx="186" cy="406" r="4" fill="#b0b0b0"/>
+  <circle cx="326" cy="406" r="4" fill="#b0b0b0"/>
 </svg>
