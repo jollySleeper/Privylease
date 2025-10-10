@@ -53,22 +53,51 @@ self.addEventListener('fetch', event => {
   }
 
   // API calls - Network First with cache fallback
-  if (url.pathname.includes('/releases')) {
+  if (url.pathname.includes('/releases') || url.pathname.includes('/download-url/')) {
     event.respondWith(
       fetch(event.request)
         .then(response => {
-          // Cache successful responses
+          // Cache successful responses with appropriate TTL
           if (response.ok) {
             const responseClone = response.clone();
+
+            // For download URLs, add timestamp for 5-minute expiration
+            const cacheResponse = url.pathname.includes('/download-url/')
+              ? new Response(responseClone.body, {
+                  status: responseClone.status,
+                  statusText: responseClone.statusText,
+                  headers: {
+                    ...Object.fromEntries(responseClone.headers.entries()),
+                    'sw-cache-timestamp': Date.now().toString(),
+                    'sw-cache-ttl': (5 * 60 * 1000).toString() // 5 minutes
+                  }
+                })
+              : responseClone;
+
             caches.open(API_CACHE).then(cache => {
-              cache.put(event.request, responseClone);
+              cache.put(event.request, cacheResponse);
             });
           }
           return response;
         })
         .catch(() => {
-          // Fallback to cache if network fails
-          return caches.match(event.request);
+          // Check cache TTL for download URLs
+          return caches.match(event.request).then(cachedResponse => {
+            if (cachedResponse && url.pathname.includes('/download-url/')) {
+              const cacheTimestamp = parseInt(cachedResponse.headers.get('sw-cache-timestamp') || '0');
+              const cacheTTL = parseInt(cachedResponse.headers.get('sw-cache-ttl') || '0');
+              const now = Date.now();
+
+              if (now - cacheTimestamp > cacheTTL) {
+                // Cache expired, don't use it
+                return new Response(JSON.stringify({ error: 'Download URL expired' }), {
+                  status: 410,
+                  headers: { 'Content-Type': 'application/json' }
+                });
+              }
+            }
+            return cachedResponse;
+          });
         })
     );
     return;
@@ -78,10 +107,42 @@ self.addEventListener('fetch', event => {
   event.respondWith(fetch(event.request));
 });
 
-// Handle messages from main thread for cache clearing
+// Handle background sync for failed downloads
+self.addEventListener('sync', event => {
+  if (event.tag === 'retry-failed-downloads') {
+    event.waitUntil(retryFailedDownloads());
+  }
+});
+
+// Handle messages from main thread for cache clearing and download retry
 self.addEventListener('message', event => {
   if (event.data.action === 'clear-cache') {
     caches.delete(API_CACHE);
     event.ports[0].postMessage({success: true});
+  } else if (event.data.action === 'retry-downloads') {
+    retryFailedDownloads();
   }
 });
+
+// Retry failed downloads when connection is restored
+async function retryFailedDownloads() {
+  try {
+    // Get stored failed downloads from IndexedDB or similar
+    // For now, we'll implement a simple retry mechanism
+    console.log('Retrying failed downloads...');
+
+    // This would typically check for stored failed download URLs
+    // and retry them. For PrivyLease, we could store failed asset downloads
+    // and retry them when connectivity is restored.
+
+    // Placeholder implementation - in a real app, you'd:
+    // 1. Check IndexedDB for failed downloads
+    // 2. Retry each failed download
+    // 3. Update UI when successful
+    // 4. Remove from failed list
+
+    console.log('Background sync completed');
+  } catch (error) {
+    console.error('Background sync failed:', error);
+  }
+}
