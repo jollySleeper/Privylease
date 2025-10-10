@@ -16,6 +16,7 @@ window.addEventListener('DOMContentLoaded', () => {
         loadReleases();
     }
     setupActivityTracking();
+    registerServiceWorker();
 });
 
 function handleEnter(event) {
@@ -345,4 +346,84 @@ function showSessionWarning() {
             error.innerHTML = '';
         }
     }, 10000);
+}
+
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/scripts/sw.js')
+            .then(registration => {
+                console.log('Service Worker registered:', registration.scope);
+
+                // Check for updates
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            // New version available
+                            showCacheUpdateNotification();
+                        }
+                    });
+                });
+            })
+            .catch(error => {
+                console.log('Service Worker registration failed:', error);
+            });
+    }
+}
+
+function showCacheUpdateNotification() {
+    // Show notification about new version
+    const notification = document.createElement('div');
+    notification.className = 'error';
+    notification.style.background = '#28a745';
+    notification.style.color = 'white';
+
+    // Create text node
+    const textNode = document.createTextNode('🎉 App updated! ');
+    notification.appendChild(textNode);
+
+    // Create refresh button
+    const refreshBtn = document.createElement('button');
+    refreshBtn.textContent = 'Refresh to get latest version';
+    refreshBtn.style.background = 'none';
+    refreshBtn.style.border = 'none';
+    refreshBtn.style.color = 'white';
+    refreshBtn.style.textDecoration = 'underline';
+    refreshBtn.style.cursor = 'pointer';
+    refreshBtn.onclick = () => location.reload();
+
+    notification.appendChild(refreshBtn);
+
+    const errorDiv = document.getElementById('error');
+    errorDiv.appendChild(notification);
+
+    // Auto-remove after 30 seconds
+    setTimeout(() => {
+        if (errorDiv.contains(notification)) {
+            errorDiv.removeChild(notification);
+        }
+    }, 30000);
+}
+
+function forceCacheRefresh() {
+    // Force clear API cache and reload data
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+            action: 'clear-cache'
+        });
+    }
+
+    // Clear local caches and reload
+    if ('caches' in window) {
+        caches.keys().then(names => {
+            names.forEach(name => {
+                if (name.includes('api-')) {
+                    caches.delete(name);
+                }
+            });
+        });
+    }
+
+    // Reload releases data
+    loadReleases();
 }
