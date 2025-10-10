@@ -7,6 +7,8 @@ on:
       - main
     paths:
       - 'index.html'
+      - 'styles/'
+      - 'scripts/'
       - '.github/workflows/deploy.yml'
 
 jobs:
@@ -43,13 +45,16 @@ jobs:
           
           # Create output directory
           mkdir -p viewer-output
-          
-          # Copy HTML file and replace worker URL
-          sed "s|const WORKER_URL = 'https://your-worker.your-subdomain.workers.dev';|const WORKER_URL = '$WORKER_URL';|g" \
-            index.html > viewer-output/index.html
-          
+
+          # Copy all files
+          cp -r index.html styles scripts viewer-output/
+
+          # Replace worker URL in the copied script file
+          sed -i "s|const WORKER_URL = 'https://your-worker.your-subdomain.workers.dev';|const WORKER_URL = '$WORKER_URL';|g" \
+            viewer-output/scripts/app.js
+
           echo "✅ Viewer configured successfully"
-          echo "Output file: viewer-output/index.html"
+          echo "Output files: viewer-output/*"
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
