@@ -83,7 +83,27 @@ Share your private GitHub releases with friends, team members, or testers withou
 
    - Click "Save and Deploy" after adding all variables
 
-5. **Set Up KV Namespace (Optional - Recommended for Enhanced Security)**
+5. **Choose a Secure Password**
+
+   **⚠️ Security Warning:** Your password protects access to private GitHub releases. Choose a strong password to prevent unauthorized access.
+
+   **Password Requirements:**
+   - **Minimum length:** 12 characters (recommended: 16+)
+   - **Complexity:** Include uppercase, lowercase, numbers, and symbols
+   - **Avoid:** Dictionary words, common patterns, personal information
+   - **Uniqueness:** Don't reuse passwords from other services
+
+   **Examples:**
+   - ✅ Good: `Tr3eH0use!2024$Secure`
+   - ❌ Weak: `password123`, `github2024`, `myname123`
+
+   **Additional Security Best Practices:**
+   - Change passwords regularly (every 90 days)
+   - Use a password manager to generate and store strong passwords
+   - Never share passwords via email or chat
+   - Consider using different passwords for different repositories
+
+6. **Set Up KV Namespace (Optional - Recommended for Enhanced Security)**
 
    **Why set this up?** Enables rate limiting to prevent brute force attacks (5 failed attempts = 15-minute block). If skipped, the worker still works but logs a warning about reduced security.
 
@@ -118,7 +138,7 @@ Share your private GitHub releases with friends, team members, or testers withou
    - A "Save and Deploy" is required for binding changes to take effect.
    - The namespace must be created *before* you can bind it.
 
-6. **Copy Worker URL**
+7. **Copy Worker URL**
    - Your worker URL will look like: `https://github-proxy.your-subdomain.workers.dev`
    - Save this URL - you'll need it in the next step
 
