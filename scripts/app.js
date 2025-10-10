@@ -7,8 +7,60 @@ let warningTimeoutId = null;
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 const WARNING_TIME_MS = 5 * 60 * 1000; // 5 minutes before timeout
 
+// UI Constants
+const UI_CONSTANTS = {
+    BUTTON_SUCCESS_TIMEOUT: 2000,     // 2 seconds for button success feedback
+    ERROR_DISPLAY_TIMEOUT: 5000,      // 5 seconds for error messages
+    WARNING_DISPLAY_TIMEOUT: 10000,   // 10 seconds for session warnings
+    ACTIVITY_EVENTS: ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click']
+};
+
 // Cache for download URLs to avoid repeated API calls
 const downloadUrlCache = new Map();
+
+// DOM element references for better performance
+const elements = {
+    loginBox: document.getElementById('loginBox'),
+    logoutSection: document.getElementById('logoutSection'),
+    passwordInput: document.getElementById('passwordInput'),
+    loginButton: document.getElementById('loginButton'),
+    logoutButton: document.getElementById('logoutButton'),
+    loading: document.getElementById('loading'),
+    error: document.getElementById('error'),
+    releases: document.getElementById('releases')
+};
+
+/**
+ * Utility functions for common operations
+ */
+const utils = {
+    /**
+     * Format a date for display in release headers
+     * @param {string} dateString - ISO date string
+     * @returns {string} Formatted date string
+     */
+    formatReleaseDate: (dateString) => {
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    },
+
+    /**
+     * Create a safe DOM element with text content
+     * @param {string} tagName - HTML tag name
+     * @param {string} className - CSS class name
+     * @param {string} textContent - Text content
+     * @returns {HTMLElement} Created element
+     */
+    createElement: (tagName, className, textContent) => {
+        const element = document.createElement(tagName);
+        if (className) element.className = className;
+        if (textContent) element.textContent = textContent;
+        return element;
+    }
+};
 
 /**
  * Centralized API error handler for consistent error processing
@@ -52,8 +104,8 @@ async function handleApiError(response, context = 'api') {
 // Initialize
 window.addEventListener('DOMContentLoaded', () => {
     if (password) {
-        document.getElementById('loginBox').style.display = 'none';
-        document.getElementById('logoutSection').classList.add('active');
+        elements.loginBox.style.display = 'none';
+        elements.logoutSection.classList.add('active');
         startSessionTimeout();
         loadReleases();
     }
@@ -65,20 +117,16 @@ window.addEventListener('DOMContentLoaded', () => {
 
 function setupEventListeners() {
     // Password input enter key handler
-    const passwordInput = document.getElementById('passwordInput');
-    passwordInput.addEventListener('keypress', handleEnter);
+    elements.passwordInput.addEventListener('keypress', handleEnter);
 
     // Login button click handler
-    const loginButton = document.getElementById('loginButton');
-    loginButton.addEventListener('click', login);
+    elements.loginButton.addEventListener('click', login);
 
     // Logout button click handler
-    const logoutButton = document.getElementById('logoutButton');
-    logoutButton.addEventListener('click', logout);
+    elements.logoutButton.addEventListener('click', logout);
 
     // Initially hide loading spinner
-    const loading = document.getElementById('loading');
-    loading.style.display = 'none';
+    elements.loading.style.display = 'none';
 }
 
 function handleEnter(event) {
@@ -88,7 +136,7 @@ function handleEnter(event) {
 }
 
 async function login() {
-    const inputPassword = document.getElementById('passwordInput').value;
+    const inputPassword = elements.passwordInput.value;
 
     if (!inputPassword) {
         showError('Please enter a password');
@@ -112,9 +160,9 @@ async function login() {
         password = inputPassword;
 
         // Update UI
-        document.getElementById('loginBox').style.display = 'none';
-        document.getElementById('logoutSection').classList.add('active');
-        document.getElementById('passwordInput').value = '';
+        elements.loginBox.style.display = 'none';
+        elements.logoutSection.classList.add('active');
+        elements.passwordInput.value = '';
 
         // Start session timeout and setup activity tracking
         startSessionTimeout();
@@ -141,17 +189,17 @@ function logout() {
     // Clear download URL cache
     downloadUrlCache.clear();
 
-    document.getElementById('loginBox').style.display = 'block';
-    document.getElementById('logoutSection').classList.remove('active');
-    document.getElementById('releases').innerHTML = '';
-    document.getElementById('releases').classList.remove('active');
-    document.getElementById('passwordInput').value = '';
+    elements.loginBox.style.display = 'block';
+    elements.logoutSection.classList.remove('active');
+    elements.releases.innerHTML = '';
+    elements.releases.classList.remove('active');
+    elements.passwordInput.value = '';
 }
 
 async function loadReleases() {
-    const loading = document.getElementById('loading');
-    const releases = document.getElementById('releases');
-    const error = document.getElementById('error');
+    const loading = elements.loading;
+    const releases = elements.releases;
+    const error = elements.error;
 
     loading.style.display = 'block';
     releases.innerHTML = '';
@@ -176,9 +224,7 @@ async function loadReleases() {
             // Clear previous content
             releases.innerHTML = '';
             // Create no releases message safely
-            const noReleasesDiv = document.createElement('div');
-            noReleasesDiv.className = 'no-releases';
-            noReleasesDiv.textContent = 'No releases found';
+            const noReleasesDiv = utils.createElement('div', 'no-releases', 'No releases found');
             releases.appendChild(noReleasesDiv);
             releases.classList.add('active');
             return;
@@ -193,7 +239,7 @@ async function loadReleases() {
 }
 
 function renderReleases(releasesData) {
-    const container = document.getElementById('releases');
+    const container = elements.releases;
 
     releasesData.forEach(release => {
         const assets = release.assets;
@@ -203,34 +249,19 @@ function renderReleases(releasesData) {
         const releaseDiv = document.createElement('div');
         releaseDiv.className = 'release';
 
-        const date = new Date(release.published_at).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
+        const date = utils.formatReleaseDate(release.published_at);
 
         // Create release header safely
-        const releaseHeader = document.createElement('div');
-        releaseHeader.className = 'release-header';
-
-        const releaseTitle = document.createElement('div');
-        releaseTitle.className = 'release-title';
-        releaseTitle.textContent = release.name || release.tag_name;
-
-        const releaseDate = document.createElement('div');
-        releaseDate.className = 'release-date';
-        releaseDate.textContent = `📅 ${date}`;
-
-        const releaseTag = document.createElement('span');
-        releaseTag.className = 'release-tag';
-        releaseTag.textContent = release.tag_name;
+        const releaseHeader = utils.createElement('div', 'release-header');
+        const releaseTitle = utils.createElement('div', 'release-title', release.name || release.tag_name);
+        const releaseDate = utils.createElement('div', 'release-date', `📅 ${date}`);
+        const releaseTag = utils.createElement('span', 'release-tag', release.tag_name);
 
         releaseHeader.appendChild(releaseTitle);
         releaseHeader.appendChild(releaseDate);
         releaseHeader.appendChild(releaseTag);
 
-        const assetList = document.createElement('div');
-        assetList.className = 'asset-list';
+        const assetList = utils.createElement('div', 'asset-list');
         assetList.id = `release-${release.id}`;
 
         releaseDiv.appendChild(releaseHeader);
@@ -242,32 +273,18 @@ function renderReleases(releasesData) {
             const size = formatBytes(asset.size);
             const icon = getFileIcon(asset.name);
 
-            const assetItem = document.createElement('div');
-            assetItem.className = 'asset-item';
-
-            const assetInfo = document.createElement('div');
-            assetInfo.className = 'asset-info';
-
-            const assetName = document.createElement('div');
-            assetName.className = 'asset-name';
-            assetName.textContent = `${icon} ${asset.name}`;
-
-            const assetSize = document.createElement('div');
-            assetSize.className = 'asset-size';
-            assetSize.textContent = size;
+            const assetItem = utils.createElement('div', 'asset-item');
+            const assetInfo = utils.createElement('div', 'asset-info');
+            const assetName = utils.createElement('div', 'asset-name', `${icon} ${asset.name}`);
+            const assetSize = utils.createElement('div', 'asset-size', size);
 
             // Create button container
-            const buttonContainer = document.createElement('div');
-            buttonContainer.className = 'button-container';
+            const buttonContainer = utils.createElement('div', 'button-container');
 
-            const downloadBtn = document.createElement('button');
-            downloadBtn.className = 'download-btn';
-            downloadBtn.textContent = '⬇️ Download';
+            const downloadBtn = utils.createElement('button', 'download-btn', '⬇️ Download');
             downloadBtn.onclick = (event) => downloadAsset(event, asset.id, asset.name);
 
-            const copyBtn = document.createElement('button');
-            copyBtn.className = 'copy-btn';
-            copyBtn.textContent = '📋 Copy Link';
+            const copyBtn = utils.createElement('button', 'copy-btn', '📋 Copy Link');
             copyBtn.onclick = (event) => copyDownloadLink(event, asset.id, asset.name);
 
             buttonContainer.appendChild(downloadBtn);
@@ -323,7 +340,7 @@ async function downloadAsset(event, assetId, fileName) {
         setTimeout(() => {
             button.textContent = originalText;
             button.disabled = false;
-        }, 2000);
+        }, UI_CONSTANTS.BUTTON_SUCCESS_TIMEOUT);
 
     } catch (err) {
         button.textContent = originalText;
@@ -352,7 +369,7 @@ async function copyDownloadLink(event, assetId, fileName) {
         setTimeout(() => {
             button.textContent = originalText;
             button.disabled = false;
-        }, 2000);
+        }, UI_CONSTANTS.BUTTON_SUCCESS_TIMEOUT);
 
     } catch (err) {
         button.textContent = originalText;
@@ -399,7 +416,7 @@ function formatBytes(bytes) {
 }
 
 function showError(message) {
-    const error = document.getElementById('error');
+    const error = elements.error;
     // Clear previous content
     error.innerHTML = '';
     // Create error div safely
@@ -409,21 +426,19 @@ function showError(message) {
     error.appendChild(errorDiv);
     setTimeout(() => {
         error.innerHTML = '';
-    }, 5000);
+    }, UI_CONSTANTS.ERROR_DISPLAY_TIMEOUT);
 }
 
 function setupActivityTracking() {
     // Reset session timeout on user activity
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-    events.forEach(event => {
+    UI_CONSTANTS.ACTIVITY_EVENTS.forEach(event => {
         document.addEventListener(event, resetSessionTimeout, { passive: true });
     });
 }
 
 function removeActivityTracking() {
     // Remove activity tracking event listeners
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-    events.forEach(event => {
+    UI_CONSTANTS.ACTIVITY_EVENTS.forEach(event => {
         document.removeEventListener(event, resetSessionTimeout);
     });
 }
@@ -455,7 +470,7 @@ function resetSessionTimeout() {
 }
 
 function showSessionWarning() {
-    const error = document.getElementById('error');
+    const error = elements.error;
     // Clear previous content
     error.innerHTML = '';
     // Create warning div safely
@@ -465,10 +480,10 @@ function showSessionWarning() {
     warningDiv.style.color = 'white';
     warningDiv.textContent = '⚠️ Your session will expire in 5 minutes due to inactivity. Move your mouse or press a key to extend your session.';
     error.appendChild(warningDiv);
-    // Auto-hide warning after 10 seconds
+    // Auto-hide warning after specified timeout
     setTimeout(() => {
         if (error.contains(warningDiv)) {
             error.innerHTML = '';
         }
-    }, 10000);
+    }, UI_CONSTANTS.WARNING_DISPLAY_TIMEOUT);
 }
