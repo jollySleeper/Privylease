@@ -1,18 +1,52 @@
 // CHANGE THIS to your Cloudflare Worker URL
 const WORKER_URL = 'https://your-worker.your-subdomain.workers.dev';
 
-let password = sessionStorage.getItem('password');
-let sessionTimeoutId = null;
-let warningTimeoutId = null;
-const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
-const WARNING_TIME_MS = 5 * 60 * 1000; // 5 minutes before timeout
+/**
+ * Application constants for timeouts, events, and configuration
+ */
+const APP_CONSTANTS = {
+    // Session management timeouts (in milliseconds)
+    SESSION_TIMEOUT_MS: 30 * 60 * 1000, // 30 minutes
+    WARNING_TIME_MS: 5 * 60 * 1000,     // 5 minutes before timeout
 
-// UI Constants
-const UI_CONSTANTS = {
-    BUTTON_SUCCESS_TIMEOUT: 2000,     // 2 seconds for button success feedback
-    ERROR_DISPLAY_TIMEOUT: 5000,      // 5 seconds for error messages
-    WARNING_DISPLAY_TIMEOUT: 10000,   // 10 seconds for session warnings
+    // UI feedback timeouts
+    BUTTON_SUCCESS_TIMEOUT: 2000,       // 2 seconds for button success feedback
+    ERROR_DISPLAY_TIMEOUT: 5000,        // 5 seconds for error messages
+    WARNING_DISPLAY_TIMEOUT: 10000,     // 10 seconds for session warnings
+
+    // Activity tracking events
     ACTIVITY_EVENTS: ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click']
+};
+
+/**
+ * Application state management
+ * Centralizes all mutable application state for better organization and debugging
+ */
+const appState = {
+    /**
+     * Current user password (stored in sessionStorage for security)
+     * @type {string|null}
+     */
+    password: (() => {
+        try {
+            return sessionStorage.getItem('password');
+        } catch (error) {
+            console.warn('Failed to access sessionStorage:', error);
+            return null;
+        }
+    })(),
+
+    /**
+     * ID for the main session timeout
+     * @type {number|null}
+     */
+    sessionTimeoutId: null,
+
+    /**
+     * ID for the session warning timeout
+     * @type {number|null}
+     */
+    warningTimeoutId: null
 };
 
 // Cache for download URLs to avoid repeated API calls
@@ -103,7 +137,7 @@ async function handleApiError(response, context = 'api') {
 
 // Initialize
 window.addEventListener('DOMContentLoaded', () => {
-    if (password) {
+    if (appState.password) {
         elements.loginBox.style.display = 'none';
         elements.logoutSection.classList.add('active');
         startSessionTimeout();
@@ -157,7 +191,7 @@ async function login() {
 
         // Store password in session
         sessionStorage.setItem('password', inputPassword);
-        password = inputPassword;
+        appState.password = inputPassword;
 
         // Update UI
         elements.loginBox.style.display = 'none';
@@ -177,13 +211,13 @@ async function login() {
 function logout() {
     sessionStorage.removeItem('password');
     sessionStorage.removeItem('lastActivity');
-    password = null;
+    appState.password = null;
 
     // Clear session timeouts and remove activity tracking
-    clearTimeout(sessionTimeoutId);
-    clearTimeout(warningTimeoutId);
-    sessionTimeoutId = null;
-    warningTimeoutId = null;
+    clearTimeout(appState.sessionTimeoutId);
+    clearTimeout(appState.warningTimeoutId);
+    appState.sessionTimeoutId = null;
+    appState.warningTimeoutId = null;
     removeActivityTracking();
 
     // Clear download URL cache
@@ -209,7 +243,7 @@ async function loadReleases() {
     try {
         const response = await fetch(`${WORKER_URL}/releases`, {
             headers: {
-                'X-Password': password
+                'X-Password': appState.password
             }
         });
 
@@ -340,7 +374,7 @@ async function downloadAsset(event, assetId, fileName) {
         setTimeout(() => {
             button.textContent = originalText;
             button.disabled = false;
-        }, UI_CONSTANTS.BUTTON_SUCCESS_TIMEOUT);
+        }, APP_CONSTANTS.BUTTON_SUCCESS_TIMEOUT);
 
     } catch (err) {
         button.textContent = originalText;
@@ -369,7 +403,7 @@ async function copyDownloadLink(event, assetId, fileName) {
         setTimeout(() => {
             button.textContent = originalText;
             button.disabled = false;
-        }, UI_CONSTANTS.BUTTON_SUCCESS_TIMEOUT);
+        }, APP_CONSTANTS.BUTTON_SUCCESS_TIMEOUT);
 
     } catch (err) {
         button.textContent = originalText;
@@ -426,45 +460,45 @@ function showError(message) {
     error.appendChild(errorDiv);
     setTimeout(() => {
         error.innerHTML = '';
-    }, UI_CONSTANTS.ERROR_DISPLAY_TIMEOUT);
+    }, APP_CONSTANTS.ERROR_DISPLAY_TIMEOUT);
 }
 
 function setupActivityTracking() {
     // Reset session timeout on user activity
-    UI_CONSTANTS.ACTIVITY_EVENTS.forEach(event => {
+    APP_CONSTANTS.ACTIVITY_EVENTS.forEach(event => {
         document.addEventListener(event, resetSessionTimeout, { passive: true });
     });
 }
 
 function removeActivityTracking() {
     // Remove activity tracking event listeners
-    UI_CONSTANTS.ACTIVITY_EVENTS.forEach(event => {
+    APP_CONSTANTS.ACTIVITY_EVENTS.forEach(event => {
         document.removeEventListener(event, resetSessionTimeout);
     });
 }
 
 function startSessionTimeout() {
     // Clear any existing timeouts
-    clearTimeout(sessionTimeoutId);
-    clearTimeout(warningTimeoutId);
+    clearTimeout(appState.sessionTimeoutId);
+    clearTimeout(appState.warningTimeoutId);
 
     // Set warning timeout (5 minutes before actual timeout)
-    warningTimeoutId = setTimeout(() => {
+    appState.warningTimeoutId = setTimeout(() => {
         showSessionWarning();
-    }, SESSION_TIMEOUT_MS - WARNING_TIME_MS);
+    }, APP_CONSTANTS.SESSION_TIMEOUT_MS - APP_CONSTANTS.WARNING_TIME_MS);
 
     // Set actual timeout
-    sessionTimeoutId = setTimeout(() => {
+    appState.sessionTimeoutId = setTimeout(() => {
         logout();
         showError('Session expired due to inactivity. Please log in again.');
-    }, SESSION_TIMEOUT_MS);
+    }, APP_CONSTANTS.SESSION_TIMEOUT_MS);
 
     // Store last activity time
     sessionStorage.setItem('lastActivity', Date.now().toString());
 }
 
 function resetSessionTimeout() {
-    if (password) { // Only reset if logged in
+    if (appState.password) { // Only reset if logged in
         startSessionTimeout();
     }
 }
@@ -485,5 +519,5 @@ function showSessionWarning() {
         if (error.contains(warningDiv)) {
             error.innerHTML = '';
         }
-    }, UI_CONSTANTS.WARNING_DISPLAY_TIMEOUT);
+    }, APP_CONSTANTS.WARNING_DISPLAY_TIMEOUT);
 }
