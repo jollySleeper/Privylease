@@ -1,0 +1,34 @@
+{
+  "name": "PrivyLease - GitHub Release Viewer",
+  "short_name": "PrivyLease",
+  "description": "Secure, password-protected web viewer for private GitHub releases",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#667eea",
+  "theme_color": "#667eea",
+  "orientation": "portrait-primary",
+  "categories": ["productivity", "developer-tools"],
+  "lang": "en-US",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='bg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' style='stop-color:%23667eea'/><stop offset='100%25' style='stop-color:%23764ba2'/></linearGradient></defs><circle cx='256' cy='256' r='240' fill='url(%23bg)' stroke='%23ffffff' stroke-width='16'/><rect x='176' y='280' width='160' height='120' rx='20' ry='20' fill='%23ffffff'/><rect x='200' y='320' width='112' height='80' rx='8' ry='8' fill='%23333333'/><rect x='232' y='200' width='48' height='120' rx='24' ry='24' fill='%23ffffff'/><circle cx='256' cy='200' r='24' fill='%23ffffff'/><circle cx='256' cy='360' r='8' fill='%23ffffff'/><rect x='248' y='352' width='16' height='20' fill='%23ffffff'/></svg>",
+      "sizes": "72x72 96x96 128x128 144x144 152x152 192x192 384x384 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "screenshots/screenshot-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ]
+}
