@@ -15,8 +15,29 @@ window.addEventListener('DOMContentLoaded', () => {
         startSessionTimeout();
         loadReleases();
     }
+
+    // Setup event listeners for buttons and inputs
+    setupEventListeners();
     setupActivityTracking();
 });
+
+function setupEventListeners() {
+    // Password input enter key handler
+    const passwordInput = document.getElementById('passwordInput');
+    passwordInput.addEventListener('keypress', handleEnter);
+
+    // Login button click handler
+    const loginButton = document.getElementById('loginButton');
+    loginButton.addEventListener('click', login);
+
+    // Logout button click handler
+    const logoutButton = document.getElementById('logoutButton');
+    logoutButton.addEventListener('click', logout);
+
+    // Initially hide loading spinner
+    const loading = document.getElementById('loading');
+    loading.style.display = 'none';
+}
 
 function handleEnter(event) {
     if (event.key === 'Enter') {

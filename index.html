@@ -20,8 +20,8 @@
 
         <div class="login-box" id="loginBox">
             <h3>🔐 Enter Password</h3>
-            <input type="password" id="passwordInput" placeholder="Enter access password" onkeypress="handleEnter(event)">
-            <button onclick="login()">Unlock</button>
+            <input type="password" id="passwordInput" placeholder="Enter access password">
+            <button id="loginButton">Unlock</button>
             <div class="info">
                 Your token is secure on the server. No CORS issues!
             </div>
@@ -29,11 +29,11 @@
 
         <div class="logout-section" id="logoutSection">
             <p>✅ Authenticated</p>
-            <button onclick="logout()">Lock & Clear Session</button>
+            <button id="logoutButton">Lock & Clear Session</button>
         </div>
 
         <div id="error"></div>
-        <div id="loading" class="loading" style="display: none;">
+        <div id="loading" class="loading">
             <div class="spinner"></div>
             <p>Loading releases...</p>
         </div>
