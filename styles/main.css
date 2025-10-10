@@ -23,6 +23,8 @@
     --border-radius-lg: 12px;
     --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     --transition: 0.3s;
+    --btn-padding: 12px 24px;
+    --btn-font-size: 16px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -352,4 +354,110 @@ body {
         margin-left: 0;
         text-align: center;
     }
+}
+
+/* Accessibility helpers */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Button styles */
+.btn-primary {
+    background: var(--btn-primary);
+    color: white;
+    border: none;
+    padding: var(--btn-padding);
+    border-radius: var(--border-radius);
+    font-size: var(--btn-font-size);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--transition);
+    display: inline-block;
+    text-align: center;
+    text-decoration: none;
+}
+
+.btn-primary:hover {
+    background: var(--btn-primary-hover);
+}
+
+.btn-secondary {
+    background: var(--btn-danger);
+    color: white;
+    border: none;
+    padding: var(--btn-padding);
+    border-radius: var(--border-radius);
+    font-size: var(--btn-font-size);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--transition);
+    display: inline-block;
+    text-align: center;
+    text-decoration: none;
+}
+
+.btn-secondary:hover {
+    background: var(--btn-danger-hover);
+}
+
+/* Form improvements */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--border-light);
+    border-radius: var(--border-radius);
+    font-size: 16px;
+    transition: border-color var(--transition);
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--btn-primary);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* NoScript message */
+.noscript-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--bg-card);
+    padding: 30px;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--box-shadow);
+    text-align: center;
+    max-width: 400px;
+    border: 2px solid var(--error-bg);
+}
+
+.noscript-message p {
+    margin: 0 0 15px 0;
+    font-size: 18px;
+    color: var(--text-primary);
+}
+
+.noscript-message p:last-child {
+    margin-bottom: 0;
+    font-size: 14px;
+    opacity: 0.8;
 }

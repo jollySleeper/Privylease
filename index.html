@@ -3,44 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Secure password-protected viewer for private GitHub releases">
+    <meta name="author" content="PrivyLease">
+    <meta name="keywords" content="GitHub, releases, secure, private, download">
+    <meta name="robots" content="noindex, nofollow">
     <meta name="color-scheme" content="light dark">
     <meta name="theme-color" content="#667eea" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#1a1a2e" media="(prefers-color-scheme: dark)">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https://*.workers.dev;">
-    <title>GitHub Releases Viewer</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🔐</text></svg>">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https://*.workers.dev; img-src data:;">
+    <title>PrivyLease - GitHub Releases Viewer</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" href="styles/main.css" as="style">
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>📦 GitHub Release Viewer</h1>
+    <main class="container" role="main">
+        <header class="header">
+            <h1>🔐 PrivyLease</h1>
             <p>Secure access to private GitHub releases</p>
-        </div>
+        </header>
 
-        <div class="login-box" id="loginBox">
-            <h3>🔐 Enter Password</h3>
-            <input type="password" id="passwordInput" placeholder="Enter access password">
-            <button id="loginButton">Unlock</button>
-            <div class="info">
-                Your token is secure on the server. No CORS issues!
+        <section class="auth-section" aria-label="Authentication">
+            <form class="login-box" id="loginBox" role="form" aria-labelledby="login-heading">
+                <h2 id="login-heading">🔐 Enter Password</h2>
+                <div class="form-group">
+                    <label for="passwordInput" class="sr-only">Access Password</label>
+                    <input
+                        type="password"
+                        id="passwordInput"
+                        name="password"
+                        placeholder="Enter access password"
+                        autocomplete="current-password"
+                        required
+                        aria-describedby="password-help"
+                    >
+                    <div id="password-help" class="sr-only">
+                        Enter your secure access password to view private releases
+                    </div>
+                </div>
+                <button type="submit" id="loginButton" class="btn-primary">
+                    🔓 Unlock Access
+                </button>
+                <div class="info" role="status" aria-live="polite">
+                    🔒 Your token is secure on the server. No CORS issues!
+                </div>
+            </form>
+
+            <div class="logout-section" id="logoutSection" role="status" aria-live="polite">
+                <p>✅ Authenticated</p>
+                <button id="logoutButton" type="button" class="btn-secondary">
+                    🚪 Lock & Clear Session
+                </button>
             </div>
+        </section>
+
+        <section class="content-section" aria-label="Releases">
+            <div id="error" role="alert" aria-live="assertive" aria-atomic="true"></div>
+
+            <div id="loading" class="loading" role="status" aria-live="polite" aria-atomic="true">
+                <div class="spinner" aria-hidden="true"></div>
+                <p>Loading releases...</p>
+            </div>
+
+            <div class="releases" id="releases" role="region" aria-label="GitHub Releases" aria-live="polite"></div>
+        </section>
+    </main>
+
+    <noscript>
+        <div class="noscript-message" role="alert">
+            <p>⚠️ JavaScript is required for this application to function properly.</p>
+            <p>Please enable JavaScript in your browser settings.</p>
         </div>
+    </noscript>
 
-        <div class="logout-section" id="logoutSection">
-            <p>✅ Authenticated</p>
-            <button id="logoutButton">Lock & Clear Session</button>
-        </div>
-
-        <div id="error"></div>
-        <div id="loading" class="loading">
-            <div class="spinner"></div>
-            <p>Loading releases...</p>
-        </div>
-
-        <div class="releases" id="releases"></div>
-    </div>
-
-    <script src="scripts/app.js"></script>
+    <script src="scripts/app.js" defer></script>
 </body>
 </html>
