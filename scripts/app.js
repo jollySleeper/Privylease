@@ -10,6 +10,45 @@ const WARNING_TIME_MS = 5 * 60 * 1000; // 5 minutes before timeout
 // Cache for download URLs to avoid repeated API calls
 const downloadUrlCache = new Map();
 
+/**
+ * Centralized API error handler for consistent error processing
+ * @param {Response} response - The fetch response object
+ * @param {string} context - Context for error message ('login', 'releases', 'download-url')
+ * @returns {never} Always throws an Error
+ */
+async function handleApiError(response, context = 'api') {
+    if (response.status === 429) {
+        // Rate limiting error
+        const errorData = await response.json();
+        throw new Error(errorData.error + (errorData.retryAfter ? ` (try again in ${Math.ceil(errorData.retryAfter / 60)} minutes)` : ''));
+    }
+
+    if (response.status === 401) {
+        // Authentication error - logout user
+        logout();
+        if (context === 'login') {
+            throw new Error('Invalid password');
+        } else {
+            throw new Error('Session expired. Please log in again.');
+        }
+    }
+
+    if (response.status === 404 && context === 'download-url') {
+        throw new Error('Download URL not found');
+    }
+
+    // Generic server errors
+    if (context === 'login') {
+        throw new Error(`Server error: ${response.status}`);
+    } else if (context === 'releases') {
+        throw new Error(`Failed to fetch releases (${response.status})`);
+    } else if (context === 'download-url') {
+        throw new Error(`Failed to get download URL (${response.status})`);
+    } else {
+        throw new Error(`Server error (${response.status})`);
+    }
+}
+
 // Initialize
 window.addEventListener('DOMContentLoaded', () => {
     if (password) {
@@ -65,16 +104,7 @@ async function login() {
         });
 
         if (!response.ok) {
-            // Handle different error types
-            if (response.status === 429) {
-                // Rate limiting error
-                const errorData = await response.json();
-                throw new Error(errorData.error + (errorData.retryAfter ? ` (try again in ${Math.ceil(errorData.retryAfter / 60)} minutes)` : ''));
-            } else if (response.status === 401) {
-                throw new Error('Invalid password');
-            } else {
-                throw new Error(`Server error: ${response.status}`);
-            }
+            await handleApiError(response, 'login');
         }
 
         // Store password in session
@@ -136,18 +166,7 @@ async function loadReleases() {
         });
 
         if (!response.ok) {
-            // Handle different error types
-            if (response.status === 429) {
-                // Rate limiting error
-                const errorData = await response.json();
-                throw new Error(errorData.error + (errorData.retryAfter ? ` (try again in ${Math.ceil(errorData.retryAfter / 60)} minutes)` : ''));
-            } else if (response.status === 401) {
-                // Password expired or invalid - logout user
-                logout();
-                throw new Error('Session expired. Please log in again.');
-            } else {
-                throw new Error(`Failed to fetch releases (${response.status})`);
-            }
+            await handleApiError(response, 'releases');
         }
 
         const data = await response.json();
@@ -360,20 +379,7 @@ async function getDownloadUrl(assetId, fileName) {
     });
 
     if (!response.ok) {
-        // Handle different error types
-        if (response.status === 429) {
-            // Rate limiting error
-            const errorData = await response.json();
-            throw new Error(errorData.error + (errorData.retryAfter ? ` (try again in ${Math.ceil(errorData.retryAfter / 60)} minutes)` : ''));
-        } else if (response.status === 401) {
-            // Password expired - logout user
-            logout();
-            throw new Error('Session expired. Please log in again.');
-        } else if (response.status === 404) {
-            throw new Error('Download URL not found');
-        } else {
-            throw new Error(`Failed to get download URL (${response.status})`);
-        }
+        await handleApiError(response, 'download-url');
     }
 
     const data = await response.json();
