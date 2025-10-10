@@ -7,6 +7,9 @@ let warningTimeoutId = null;
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 const WARNING_TIME_MS = 5 * 60 * 1000; // 5 minutes before timeout
 
+// Cache for download URLs to avoid repeated API calls
+const downloadUrlCache = new Map();
+
 // Initialize
 window.addEventListener('DOMContentLoaded', () => {
     if (password) {
@@ -104,6 +107,9 @@ function logout() {
     sessionTimeoutId = null;
     warningTimeoutId = null;
     removeActivityTracking();
+
+    // Clear download URL cache
+    downloadUrlCache.clear();
 
     document.getElementById('loginBox').style.display = 'block';
     document.getElementById('logoutSection').classList.remove('active');
@@ -287,34 +293,11 @@ async function downloadAsset(event, assetId, fileName) {
         button.disabled = true;
         button.textContent = '📥 Getting download link...';
 
-        // Get download URL from Cloudflare Worker
-        const response = await fetch(`${WORKER_URL}/download-url/${assetId}`, {
-            headers: {
-                'X-Password': password
-            }
-        });
-
-        if (!response.ok) {
-            // Handle different error types
-            if (response.status === 429) {
-                // Rate limiting error
-                const errorData = await response.json();
-                throw new Error(errorData.error + (errorData.retryAfter ? ` (try again in ${Math.ceil(errorData.retryAfter / 60)} minutes)` : ''));
-            } else if (response.status === 401) {
-                // Password expired - logout user
-                logout();
-                throw new Error('Session expired. Please log in again.');
-            } else if (response.status === 404) {
-                throw new Error('Download URL not found');
-            } else {
-                throw new Error(`Failed to get download URL (${response.status})`);
-            }
-        }
-
-        const data = await response.json();
+        // Get download URL using shared function (with caching)
+        const downloadUrl = await getDownloadUrl(assetId, fileName);
 
         // Open download URL in new tab (direct download from GitHub CDN)
-        window.open(data.downloadUrl, '_blank');
+        window.open(downloadUrl, '_blank');
 
         // Success feedback
         button.textContent = '✅ Opening download...';
@@ -339,34 +322,11 @@ async function copyDownloadLink(event, assetId, fileName) {
         button.disabled = true;
         button.textContent = '🔗 Getting link...';
 
-        // Get download URL from Cloudflare Worker (same as download)
-        const response = await fetch(`${WORKER_URL}/download-url/${assetId}`, {
-            headers: {
-                'X-Password': password
-            }
-        });
-
-        if (!response.ok) {
-            // Handle different error types
-            if (response.status === 429) {
-                // Rate limiting error
-                const errorData = await response.json();
-                throw new Error(errorData.error + (errorData.retryAfter ? ` (try again in ${Math.ceil(errorData.retryAfter / 60)} minutes)` : ''));
-            } else if (response.status === 401) {
-                // Password expired - logout user
-                logout();
-                throw new Error('Session expired. Please log in again.');
-            } else if (response.status === 404) {
-                throw new Error('Download URL not found');
-            } else {
-                throw new Error(`Failed to get download URL (${response.status})`);
-            }
-        }
-
-        const data = await response.json();
+        // Get download URL using shared function (with caching)
+        const downloadUrl = await getDownloadUrl(assetId, fileName);
 
         // Copy URL to clipboard
-        await navigator.clipboard.writeText(data.downloadUrl);
+        await navigator.clipboard.writeText(downloadUrl);
 
         // Success feedback
         button.textContent = '✅ Copied!';
@@ -384,6 +344,44 @@ async function copyDownloadLink(event, assetId, fileName) {
             showError(`Failed to copy link for ${fileName}: ${err.message}`);
         }
     }
+}
+
+async function getDownloadUrl(assetId, fileName) {
+    // Check cache first
+    if (downloadUrlCache.has(assetId)) {
+        return downloadUrlCache.get(assetId);
+    }
+
+    // Fetch from API
+    const response = await fetch(`${WORKER_URL}/download-url/${assetId}`, {
+        headers: {
+            'X-Password': password
+        }
+    });
+
+    if (!response.ok) {
+        // Handle different error types
+        if (response.status === 429) {
+            // Rate limiting error
+            const errorData = await response.json();
+            throw new Error(errorData.error + (errorData.retryAfter ? ` (try again in ${Math.ceil(errorData.retryAfter / 60)} minutes)` : ''));
+        } else if (response.status === 401) {
+            // Password expired - logout user
+            logout();
+            throw new Error('Session expired. Please log in again.');
+        } else if (response.status === 404) {
+            throw new Error('Download URL not found');
+        } else {
+            throw new Error(`Failed to get download URL (${response.status})`);
+        }
+    }
+
+    const data = await response.json();
+
+    // Cache the URL for future use
+    downloadUrlCache.set(assetId, data.downloadUrl);
+
+    return data.downloadUrl;
 }
 
 function formatBytes(bytes) {
