@@ -84,16 +84,39 @@ Share your private GitHub releases with friends, team members, or testers withou
    - Click "Save and Deploy" after adding all variables
 
 5. **Set Up KV Namespace (Optional - Recommended for Enhanced Security)**
-   - Go to your Cloudflare Dashboard → "Workers & Pages" → "KV"
-   - Click "Create namespace"
-   - Name it `rate-limit` (or any name you prefer)
-   - Go back to your Worker → "Settings" → "Variables" → "KV Namespace Bindings"
-   - Click "Add binding"
-   - Variable name: `KV`
-   - KV namespace: Select the `rate-limit` namespace you just created
-   - Click "Save and Deploy"
 
-   **Note:** The KV namespace enables rate limiting (5 attempts = 15-minute block) to prevent brute force attacks. If not configured, the worker will still function normally but with reduced security - a warning will be logged in the worker console.
+   **Why set this up?** Enables rate limiting to prevent brute force attacks (5 failed attempts = 15-minute block). If skipped, the worker still works but logs a warning about reduced security.
+
+   **Step-by-step instructions based on the latest Cloudflare UI:**
+
+   **A. Create KV Namespace:**
+   1. Go to the [Cloudflare Dashboard](https://dash.cloudflare.com/).
+   2. In the left sidebar, find and click on **Storage & Databases** to expand it.
+   3. Select **KV** from the dropdown menu.
+   4. Click the **Create namespace** button.
+   5. Name it `rate-limit`.
+   6. Click **Add**.
+
+   **B. Bind Namespace to Worker:**
+   1. Navigate back to your Worker's page (e.g., via the "Recently modified applications" on the home screen or by clicking **Compute (Workers)** in the sidebar).
+   2. Click on your worker's name (e.g., `github-downloader`).
+   3. Select the **Settings** tab.
+   4. In the sub-navigation menu that appears, click on **Bindings**.
+   5. Click on **Add Bindings**.
+   6. Scroll down to the **KV Namespace** section and click **Add binding**.
+   7. Set **Variable name:** to `KV` (this must be exact and is case-sensitive).
+   8. For **KV namespace**, select the `rate-limit` namespace you just created.
+   9. Click **Save and Deploy**.
+
+   **C. Verify Setup:**
+   - After deployment, check your Worker logs by going to the **Observability** tab.
+   - If KV is working correctly, you should not see any rate limiting warnings.
+   - If it's not configured, the logs will show: `"Rate limiting disabled: KV namespace not configured"`.
+
+   **Troubleshooting:**
+   - The binding variable name must be exactly `KV`.
+   - A "Save and Deploy" is required for binding changes to take effect.
+   - The namespace must be created *before* you can bind it.
 
 6. **Copy Worker URL**
    - Your worker URL will look like: `https://github-proxy.your-subdomain.workers.dev`
@@ -355,6 +378,17 @@ Gets an authenticated download URL for a specific asset.
 - Check "Real-time Logs" in worker dashboard for errors
 - Ensure worker route/domain is configured properly
 - Try redeploying the worker
+
+### KV Namespace Issues
+
+**Symptoms:** Rate limiting warnings in worker logs, or rate limiting not working.
+
+**Solutions:**
+- **Verify KV namespace exists:** Go to Dashboard → **Storage & Databases** → **KV**.
+- **Check binding:** Go to your Worker → **Settings** → **Bindings** → **KV Namespace Bindings**.
+- **Ensure variable name is exactly `KV`** (case-sensitive).
+- Make sure you clicked **"Save and Deploy"** after adding the binding.
+- Check your worker's **Observability** tab for specific error messages.
 
 ### GitHub Pages Not Updating
 
