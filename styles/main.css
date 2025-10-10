@@ -238,6 +238,13 @@ body {
     color: var(--text-secondary);
 }
 
+.button-container {
+    display: flex;
+    gap: 10px;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
 .download-btn {
     background: var(--btn-success);
     color: white;
@@ -250,7 +257,6 @@ body {
     display: inline-block;
     transition: background var(--transition);
     white-space: nowrap;
-    margin-left: 15px;
 }
 
 .download-btn:hover {
@@ -258,6 +264,28 @@ body {
 }
 
 .download-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.copy-btn {
+    background: var(--btn-primary);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition);
+    white-space: nowrap;
+    font-size: 0.9em;
+}
+
+.copy-btn:hover {
+    background: var(--btn-primary-hover);
+}
+
+.copy-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
@@ -311,10 +339,17 @@ body {
         align-items: flex-start;
     }
 
-    .download-btn {
-        margin-left: 0;
-        margin-top: 10px;
+    .button-container {
         width: 100%;
+        margin-top: 10px;
+        flex-direction: row;
+        gap: 8px;
+    }
+
+    .download-btn,
+    .copy-btn {
+        flex: 1;
+        margin-left: 0;
         text-align: center;
     }
 }

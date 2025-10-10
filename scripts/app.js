@@ -190,15 +190,27 @@ function renderReleases(releasesData) {
             assetSize.className = 'asset-size';
             assetSize.textContent = size;
 
+            // Create button container
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'button-container';
+
             const downloadBtn = document.createElement('button');
             downloadBtn.className = 'download-btn';
             downloadBtn.textContent = '⬇️ Download';
             downloadBtn.onclick = (event) => downloadAsset(event, asset.id, asset.name);
 
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'copy-btn';
+            copyBtn.textContent = '📋 Copy Link';
+            copyBtn.onclick = (event) => copyDownloadLink(event, asset.id, asset.name);
+
+            buttonContainer.appendChild(downloadBtn);
+            buttonContainer.appendChild(copyBtn);
+
             assetInfo.appendChild(assetName);
             assetInfo.appendChild(assetSize);
             assetItem.appendChild(assetInfo);
-            assetItem.appendChild(downloadBtn);
+            assetItem.appendChild(buttonContainer);
             assetList.appendChild(assetItem);
         });
     });
@@ -261,6 +273,49 @@ async function downloadAsset(event, assetId, fileName) {
         button.textContent = originalText;
         button.disabled = false;
         showError(`Failed to download ${fileName}: ${err.message}`);
+    }
+}
+
+async function copyDownloadLink(event, assetId, fileName) {
+    event.preventDefault();
+    const button = event.target;
+    const originalText = button.textContent;
+
+    try {
+        button.disabled = true;
+        button.textContent = '🔗 Getting link...';
+
+        // Get download URL from Cloudflare Worker (same as download)
+        const response = await fetch(`${WORKER_URL}/download-url/${assetId}`, {
+            headers: {
+                'X-Password': password
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to get download URL');
+        }
+
+        const data = await response.json();
+
+        // Copy URL to clipboard
+        await navigator.clipboard.writeText(data.downloadUrl);
+
+        // Success feedback
+        button.textContent = '✅ Copied!';
+        setTimeout(() => {
+            button.textContent = originalText;
+            button.disabled = false;
+        }, 2000);
+
+    } catch (err) {
+        button.textContent = originalText;
+        button.disabled = false;
+        if (err.name === 'NotAllowedError') {
+            showError('Clipboard access denied. Please allow clipboard permissions.');
+        } else {
+            showError(`Failed to copy link for ${fileName}: ${err.message}`);
+        }
     }
 }
 
