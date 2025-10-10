@@ -358,8 +358,9 @@
                 document.getElementById('logoutSection').classList.add('active');
                 document.getElementById('passwordInput').value = '';
 
-                // Start session timeout
+                // Start session timeout and setup activity tracking
                 startSessionTimeout();
+                setupActivityTracking();
 
                 loadReleases();
             } catch (err) {
@@ -372,11 +373,12 @@
             sessionStorage.removeItem('lastActivity');
             password = null;
 
-            // Clear session timeouts
+            // Clear session timeouts and remove activity tracking
             clearTimeout(sessionTimeoutId);
             clearTimeout(warningTimeoutId);
             sessionTimeoutId = null;
             warningTimeoutId = null;
+            removeActivityTracking();
 
             document.getElementById('loginBox').style.display = 'block';
             document.getElementById('logoutSection').classList.remove('active');
@@ -594,6 +596,14 @@
             const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
             events.forEach(event => {
                 document.addEventListener(event, resetSessionTimeout, { passive: true });
+            });
+        }
+
+        function removeActivityTracking() {
+            // Remove activity tracking event listeners
+            const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+            events.forEach(event => {
+                document.removeEventListener(event, resetSessionTimeout);
             });
         }
 
