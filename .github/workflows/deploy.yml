@@ -9,6 +9,9 @@ on:
       - 'index.html'
       - 'styles/'
       - 'scripts/'
+      - 'sw.js'
+      - 'manifest.json'
+      - 'icons/'
       - '.github/workflows/deploy.yml'
 
 jobs:
@@ -47,7 +50,7 @@ jobs:
           mkdir -p viewer-output
 
           # Copy all files
-          cp -r index.html styles scripts viewer-output/
+          cp -r index.html styles scripts manifest.json icons viewer-output/
 
           # Replace worker URL in the copied script file
           sed -i "s|const WORKER_URL = 'https://your-worker.your-subdomain.workers.dev';|const WORKER_URL = '$WORKER_URL';|g" \
