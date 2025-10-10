@@ -41,7 +41,16 @@ async function login() {
         });
 
         if (!response.ok) {
-            throw new Error('Invalid password');
+            // Handle different error types
+            if (response.status === 429) {
+                // Rate limiting error
+                const errorData = await response.json();
+                throw new Error(errorData.error + (errorData.retryAfter ? ` (try again in ${Math.ceil(errorData.retryAfter / 60)} minutes)` : ''));
+            } else if (response.status === 401) {
+                throw new Error('Invalid password');
+            } else {
+                throw new Error(`Server error: ${response.status}`);
+            }
         }
 
         // Store password in session
@@ -100,7 +109,18 @@ async function loadReleases() {
         });
 
         if (!response.ok) {
-            throw new Error('Failed to fetch releases');
+            // Handle different error types
+            if (response.status === 429) {
+                // Rate limiting error
+                const errorData = await response.json();
+                throw new Error(errorData.error + (errorData.retryAfter ? ` (try again in ${Math.ceil(errorData.retryAfter / 60)} minutes)` : ''));
+            } else if (response.status === 401) {
+                // Password expired or invalid - logout user
+                logout();
+                throw new Error('Session expired. Please log in again.');
+            } else {
+                throw new Error(`Failed to fetch releases (${response.status})`);
+            }
         }
 
         const data = await response.json();
@@ -254,7 +274,20 @@ async function downloadAsset(event, assetId, fileName) {
         });
 
         if (!response.ok) {
-            throw new Error('Failed to get download URL');
+            // Handle different error types
+            if (response.status === 429) {
+                // Rate limiting error
+                const errorData = await response.json();
+                throw new Error(errorData.error + (errorData.retryAfter ? ` (try again in ${Math.ceil(errorData.retryAfter / 60)} minutes)` : ''));
+            } else if (response.status === 401) {
+                // Password expired - logout user
+                logout();
+                throw new Error('Session expired. Please log in again.');
+            } else if (response.status === 404) {
+                throw new Error('Download URL not found');
+            } else {
+                throw new Error(`Failed to get download URL (${response.status})`);
+            }
         }
 
         const data = await response.json();
@@ -293,7 +326,20 @@ async function copyDownloadLink(event, assetId, fileName) {
         });
 
         if (!response.ok) {
-            throw new Error('Failed to get download URL');
+            // Handle different error types
+            if (response.status === 429) {
+                // Rate limiting error
+                const errorData = await response.json();
+                throw new Error(errorData.error + (errorData.retryAfter ? ` (try again in ${Math.ceil(errorData.retryAfter / 60)} minutes)` : ''));
+            } else if (response.status === 401) {
+                // Password expired - logout user
+                logout();
+                throw new Error('Session expired. Please log in again.');
+            } else if (response.status === 404) {
+                throw new Error('Download URL not found');
+            } else {
+                throw new Error(`Failed to get download URL (${response.status})`);
+            }
         }
 
         const data = await response.json();
